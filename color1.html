@@ -388,6 +388,10 @@
 
         .tool-rail.right {
             right: 10px;
+            bottom: auto;
+            height: auto;
+            justify-content: flex-start;
+            gap: 14px;
         }
 
         .tool-icon {
@@ -632,6 +636,12 @@
             cursor: grab;
         }
 
+        .generated-image:hover,
+        .thumb:hover {
+            outline: 2px solid rgba(0, 46, 163, 0.45);
+            outline-offset: 2px;
+        }
+
         .generated-image:active {
             cursor: grabbing;
         }
@@ -672,17 +682,28 @@
         }
 
         .input-shell.has-attachment {
-            height: 98px;
+            height: 110px;
         }
 
         .input-shell.needs-attachment {
             box-shadow: 0 0 0 3px rgba(0, 46, 163, 0.14);
         }
 
-        .attachment-chip {
+        .attachment-list {
             position: absolute;
             left: 16px;
+            right: 58px;
             top: 10px;
+            display: none;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .input-shell.has-attachment .attachment-list {
+            display: flex;
+        }
+
+        .attachment-chip {
             height: 38px;
             min-width: 88px;
             display: none;
@@ -694,7 +715,7 @@
             box-shadow: 0 2px 8px rgba(0, 20, 90, 0.12);
         }
 
-        .input-shell.has-attachment .attachment-chip {
+        .attachment-chip.is-visible {
             display: flex;
         }
 
@@ -703,6 +724,16 @@
             height: 30px;
             border-radius: 7px;
             object-fit: cover;
+        }
+
+        .attachment-chip span {
+            max-width: 62px;
+            overflow: hidden;
+            color: #002ea3;
+            font-size: 12px;
+            line-height: 1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .attachment-chip button {
@@ -773,6 +804,82 @@
             height: 35px;
         }
 
+        .detail-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            place-items: center;
+            padding: 34px;
+            background: rgba(25, 28, 45, 0.28);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 40;
+        }
+
+        .detail-modal.is-open {
+            display: grid;
+        }
+
+        .detail-card {
+            position: relative;
+            width: min(970px, 78vw);
+            max-height: 84vh;
+            overflow: auto;
+            padding: 58px 52px 48px;
+            border-radius: 18px;
+            background: linear-gradient(115deg, rgba(241, 245, 253, 0.96), rgba(246, 238, 232, 0.96));
+            box-shadow: 0 22px 64px rgba(19, 23, 62, 0.28);
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 28px;
+            height: 28px;
+            border: 0;
+            background: transparent;
+            color: #111;
+            font-size: 26px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .detail-image-wrap {
+            position: relative;
+            width: min(620px, 66vw);
+            margin: 0 auto 28px;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 46vh;
+            display: block;
+            object-fit: contain;
+        }
+
+        .detail-edit {
+            position: absolute;
+            right: -88px;
+            bottom: 12px;
+            min-width: 92px;
+            height: 30px;
+            border: 0;
+            border-radius: 999px;
+            color: #fff;
+            background: rgba(76, 76, 76, 0.82);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .detail-explanation {
+            margin: 0;
+            color: #202024;
+            font-size: 17px;
+            line-height: 1.55;
+            text-align: justify;
+        }
+
         @media (max-width: 1200px) {
             body {
                 overflow: auto;
@@ -825,7 +932,7 @@
         <section class="left-column" aria-label="Artwork and color controls">
             <div class="panel original-card">
                 <h2 class="panel-title">Original artwork</h2>
-                <div class="artwork-preview" id="originalArtwork" draggable="true" data-src="original_work.jpg">
+                <div class="artwork-preview" id="originalArtwork" draggable="true" data-kind="original" data-src="original_work.jpg">
                     <img src="original_work.jpg" alt="Original artwork">
                 </div>
                 <div class="color-dots" aria-label="Extracted color palette">
@@ -886,8 +993,8 @@
                         <img src="arrow_right.png" alt="">
                     </div>
                     <div class="thumb-row inspiration">
-                        <div class="thumb" draggable="true" data-src="inspiration1.jpg"><img src="inspiration1.jpg" alt="Inspiration artwork"></div>
-                        <div class="thumb" draggable="true" data-src="inspiration2.jpg"><img src="inspiration2.jpg" alt="Inspiration artwork"></div>
+                        <div class="thumb" draggable="true" data-kind="inspiration" data-src="inspiration1.jpg"><img src="inspiration1.jpg" alt="Inspiration artwork"></div>
+                        <div class="thumb" draggable="true" data-kind="inspiration" data-src="inspiration2.jpg"><img src="inspiration2.jpg" alt="Inspiration artwork"></div>
                     </div>
                 </div>
                 <div class="panel mini-panel">
@@ -896,8 +1003,8 @@
                         <img src="arrow_right.png" alt="">
                     </div>
                     <div class="thumb-row history" id="historyGrid">
-                        <div class="thumb" draggable="true" data-src="history1.jpg"><img src="history1.jpg" alt="History artwork"></div>
-                        <div class="thumb" draggable="true" data-src="history2.jpg"><img src="history2.jpg" alt="History artwork"></div>
+                        <div class="thumb" draggable="true" data-kind="history" data-src="history1.jpg"><img src="history1.jpg" alt="History artwork"></div>
+                        <div class="thumb" draggable="true" data-kind="history" data-src="history2.jpg"><img src="history2.jpg" alt="History artwork"></div>
                     </div>
                 </div>
             </div>
@@ -925,9 +1032,17 @@
             </div>
             <div class="drop-hint">Drop artwork here to use it as the AI reference.</div>
             <div class="input-shell">
-                <div class="attachment-chip" id="attachmentChip">
-                    <img id="attachmentThumb" alt="Attached artwork">
-                    <button type="button" id="removeAttachmentBtn" aria-label="Remove attachment">x</button>
+                <div class="attachment-list" id="attachmentList">
+                    <div class="attachment-chip" id="targetAttachmentChip">
+                        <img id="targetAttachmentThumb" alt="Target artwork">
+                        <span>Target</span>
+                        <button type="button" id="removeTargetAttachmentBtn" aria-label="Remove target attachment">x</button>
+                    </div>
+                    <div class="attachment-chip" id="referenceAttachmentChip">
+                        <img id="referenceAttachmentThumb" alt="Reference artwork">
+                        <span>Reference</span>
+                        <button type="button" id="removeReferenceAttachmentBtn" aria-label="Remove reference attachment">x</button>
+                    </div>
                 </div>
                 <input id="promptInput" type="text" placeholder="Type something fun (e.g.,Dopamine brights)...">
                 <span class="plus" aria-hidden="true">+</span>
@@ -937,6 +1052,17 @@
             </div>
         </aside>
     </main>
+
+    <div class="detail-modal" id="detailModal" aria-hidden="true">
+        <div class="detail-card" role="dialog" aria-modal="true" aria-label="Generated artwork detail">
+            <button class="detail-close" id="detailCloseBtn" type="button" aria-label="Close detail">x</button>
+            <div class="detail-image-wrap">
+                <img class="detail-image" id="detailImage" alt="Artwork detail">
+                <button class="detail-edit" id="detailEditBtn" type="button">Edit in canvas</button>
+            </div>
+            <p class="detail-explanation" id="detailExplanation"></p>
+        </div>
+    </div>
 
     <script src="config.js"></script>
     <script>
@@ -953,14 +1079,22 @@
         const chatPanel = document.querySelector(".chat-panel");
         const promptInput = document.getElementById("promptInput");
         const inputShell = document.querySelector(".input-shell");
-        const attachmentChip = document.getElementById("attachmentChip");
-        const attachmentThumb = document.getElementById("attachmentThumb");
-        const removeAttachmentBtn = document.getElementById("removeAttachmentBtn");
+        const targetAttachmentChip = document.getElementById("targetAttachmentChip");
+        const targetAttachmentThumb = document.getElementById("targetAttachmentThumb");
+        const removeTargetAttachmentBtn = document.getElementById("removeTargetAttachmentBtn");
+        const referenceAttachmentChip = document.getElementById("referenceAttachmentChip");
+        const referenceAttachmentThumb = document.getElementById("referenceAttachmentThumb");
+        const removeReferenceAttachmentBtn = document.getElementById("removeReferenceAttachmentBtn");
         const aiResult = document.getElementById("aiResult");
         const promptBubble = document.getElementById("promptBubble");
         const resultStatus = document.getElementById("resultStatus");
         const generatedImage = document.getElementById("generatedImage");
         const resultNote = document.getElementById("resultNote");
+        const detailModal = document.getElementById("detailModal");
+        const detailImage = document.getElementById("detailImage");
+        const detailExplanation = document.getElementById("detailExplanation");
+        const detailCloseBtn = document.getElementById("detailCloseBtn");
+        const detailEditBtn = document.getElementById("detailEditBtn");
         const historyGrid = document.getElementById("historyGrid");
         const hexInput = document.querySelector(".color-fields input[aria-label='Color value']");
         const opacityInput = document.querySelector(".color-fields input[aria-label='Opacity value']");
@@ -980,7 +1114,10 @@
         let referenceImage = "original_work.jpg";
         let latestGenerated = "";
         let currentCanvasSource = ORIGINAL_IMAGE;
-        let attachedImage = null;
+        let targetAttachment = null;
+        let referenceAttachment = null;
+        let activeDetailRecord = null;
+        let imageBounds = { x: 0, y: 0, width: canvas.width, height: canvas.height };
         let selectionMask = null;
         let selectionEdges = [];
         let selectionMode = "replace";
@@ -995,6 +1132,7 @@
         const baseCtx = baseCanvas.getContext("2d", { willReadFrequently: true });
         const paintCtx = paintCanvas.getContext("2d", { willReadFrequently: true });
         const undoStack = [];
+        const generationRecords = [];
 
         function fillInput(text) {
             promptInput.value = text;
@@ -1012,17 +1150,18 @@
             });
         }
 
-        function drawImageCover(img) {
+        function drawImageContain(img) {
             const cw = canvas.width;
             const ch = canvas.height;
-            const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-            const sw = cw / scale;
-            const sh = ch / scale;
-            const sx = (img.naturalWidth - sw) / 2;
-            const sy = (img.naturalHeight - sh) / 2;
+            const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+            const dw = Math.round(img.naturalWidth * scale);
+            const dh = Math.round(img.naturalHeight * scale);
+            const dx = Math.round((cw - dw) / 2);
+            const dy = Math.round((ch - dh) / 2);
+            imageBounds = { x: dx, y: dy, width: dw, height: dh };
             baseCtx.clearRect(0, 0, cw, ch);
             paintCtx.clearRect(0, 0, cw, ch);
-            baseCtx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+            baseCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
             renderCanvas();
         }
 
@@ -1091,20 +1230,38 @@
         async function loadCanvasSource(src, saveSource = true) {
             const img = await loadImage(src);
             if (saveSource) pushUndo();
-            drawImageCover(img);
+            drawImageContain(img);
             if (saveSource) currentCanvasSource = src;
             clearSelection();
         }
 
-        function canvasDataUrl() {
+        function canvasDataUrl(cropToImage = true) {
             renderCanvas();
+            if (cropToImage && imageBounds.width > 0 && imageBounds.height > 0) {
+                const output = document.createElement("canvas");
+                output.width = imageBounds.width;
+                output.height = imageBounds.height;
+                output.getContext("2d").drawImage(
+                    canvas,
+                    imageBounds.x,
+                    imageBounds.y,
+                    imageBounds.width,
+                    imageBounds.height,
+                    0,
+                    0,
+                    imageBounds.width,
+                    imageBounds.height
+                );
+                return output.toDataURL("image/png");
+            }
             return canvas.toDataURL("image/png");
         }
 
         function pushUndo() {
             undoStack.push({
                 base: baseCtx.getImageData(0, 0, canvas.width, canvas.height),
-                paint: paintCtx.getImageData(0, 0, canvas.width, canvas.height)
+                paint: paintCtx.getImageData(0, 0, canvas.width, canvas.height),
+                bounds: { ...imageBounds }
             });
             if (undoStack.length > 20) undoStack.shift();
         }
@@ -1114,6 +1271,7 @@
             if (!snapshot) return;
             baseCtx.putImageData(snapshot.base, 0, 0);
             paintCtx.putImageData(snapshot.paint, 0, 0);
+            imageBounds = snapshot.bounds || imageBounds;
             clearSelection();
             renderCanvas();
         }
@@ -1126,6 +1284,57 @@
                 cssX: event.clientX - rect.left,
                 cssY: event.clientY - rect.top
             };
+        }
+
+        function isPointInImage(point) {
+            return point.x >= imageBounds.x
+                && point.x < imageBounds.x + imageBounds.width
+                && point.y >= imageBounds.y
+                && point.y < imageBounds.y + imageBounds.height;
+        }
+
+        function imageToDataUrl(src, maxSide = 1600) {
+            if (!src) return Promise.resolve(src);
+            return loadImage(src).then((img) => {
+                const output = document.createElement("canvas");
+                const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+                output.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                output.height = Math.max(1, Math.round(img.naturalHeight * scale));
+                output.getContext("2d").drawImage(img, 0, 0, output.width, output.height);
+                return output.toDataURL("image/jpeg", 0.92);
+            }).catch(() => {
+                if (/^https?:\/\//i.test(src)) return src;
+                return new URL(src, location.href).href;
+            });
+        }
+
+        async function extractPalette(src, count = 5) {
+            const img = await loadImage(src);
+            const sample = document.createElement("canvas");
+            const maxSide = 90;
+            const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+            sample.width = Math.max(1, Math.round(img.naturalWidth * scale));
+            sample.height = Math.max(1, Math.round(img.naturalHeight * scale));
+            const sampleCtx = sample.getContext("2d", { willReadFrequently: true });
+            sampleCtx.drawImage(img, 0, 0, sample.width, sample.height);
+            const data = sampleCtx.getImageData(0, 0, sample.width, sample.height).data;
+            const buckets = new Map();
+            for (let i = 0; i < data.length; i += 16) {
+                const alpha = data[i + 3];
+                if (alpha < 128) continue;
+                const r = Math.round(data[i] / 32) * 32;
+                const g = Math.round(data[i + 1] / 32) * 32;
+                const b = Math.round(data[i + 2] / 32) * 32;
+                const key = `${r},${g},${b}`;
+                buckets.set(key, (buckets.get(key) || 0) + 1);
+            }
+            return [...buckets.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, count)
+                .map(([key]) => {
+                    const [r, g, b] = key.split(",").map(Number);
+                    return `#${rgbToHex(r, g, b)}`;
+                });
         }
 
         function setTool(tool) {
@@ -1254,6 +1463,7 @@
         }
 
         function createMagicWandMask(point, tolerance = WAND_TOLERANCE) {
+            if (!isPointInImage(point)) return new Uint8Array(canvas.width * canvas.height);
             renderCanvas();
             const w = canvas.width;
             const h = canvas.height;
@@ -1328,15 +1538,20 @@
         }
 
         function pickColor(point) {
+            if (!isPointInImage(point)) return;
             renderCanvas();
             const pixel = ctx.getImageData(Math.round(point.x), Math.round(point.y), 1, 1).data;
             setSelectedColor(`#${rgbToHex(pixel[0], pixel[1], pixel[2])}`, pixel[3] / 255);
         }
 
         function beginBrush(point) {
+            if (!isPointInImage(point)) return;
             pushUndo();
             isDrawing = true;
             paintCtx.save();
+            paintCtx.beginPath();
+            paintCtx.rect(imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height);
+            paintCtx.clip();
             paintCtx.globalCompositeOperation = activeTool === "eraser" ? "destination-out" : "source-over";
             paintCtx.globalAlpha = activeTool === "eraser" ? 1 : selectedAlpha;
             paintCtx.strokeStyle = activeTool === "eraser" ? "rgba(0,0,0,1)" : selectedColor;
@@ -1348,6 +1563,7 @@
         }
 
         function brushTo(point) {
+            if (!isPointInImage(point)) return;
             paintCtx.lineTo(point.x, point.y);
             paintCtx.stroke();
             renderCanvas();
@@ -1360,16 +1576,41 @@
             renderCanvas();
         }
 
-        function addHistory(src) {
+        function createFallbackExplanation(prompt, palette = []) {
+            const colors = palette.length ? ` using a reference palette of ${palette.join(", ")}` : "";
+            return `This result translates the artwork through color: ${prompt}${colors}. The new palette is meant to shift the mood while preserving the original folk-art composition, figures, and narrative rhythm.`;
+        }
+
+        function createRecord(src, prompt = "Original color study", explanation = "", reference = null) {
+            return {
+                imageUrl: src,
+                prompt,
+                explanation: explanation || createFallbackExplanation(prompt),
+                referenceImage: reference,
+                createdAt: Date.now()
+            };
+        }
+
+        function addHistory(recordOrSrc) {
+            const record = typeof recordOrSrc === "string" ? createRecord(recordOrSrc) : recordOrSrc;
+            generationRecords.unshift(record);
             const item = document.createElement("div");
             item.className = "thumb";
             item.draggable = true;
-            item.dataset.src = src;
-            item.innerHTML = `<img src="${src}" alt="History artwork">`;
+            item.dataset.kind = "history";
+            item.dataset.src = record.imageUrl;
+            item.dataset.recordIndex = "0";
+            const img = document.createElement("img");
+            img.src = record.imageUrl;
+            img.alt = "History artwork";
+            item.appendChild(img);
             historyGrid.prepend(item);
             while (historyGrid.children.length > 4) {
                 historyGrid.lastElementChild.remove();
             }
+            [...historyGrid.children].forEach((child, index) => {
+                child.dataset.recordIndex = String(index);
+            });
             makeDraggable(item);
         }
 
@@ -1377,7 +1618,7 @@
             return null;
         }
 
-        async function generateArtworkViaProxy(prompt, sourceImage) {
+        async function generateArtworkViaProxy(prompt, sourceImage, referenceSrc = null, referencePalette = []) {
             if (location.protocol === "file:") {
                 throw new Error("Pixel and API features require opening this page through localhost.");
             }
@@ -1387,9 +1628,11 @@
                 body: JSON.stringify({
                     prompt,
                     image: sourceImage,
+                    referenceImage: referenceSrc,
                     options: {
                         aspectRatio: "4:3",
-                        imageSize: "1K"
+                        imageSize: "1K",
+                        referencePalette
                     }
                 })
             });
@@ -1400,44 +1643,84 @@
             return data;
         }
 
-        function attachImageToInput(src) {
-            attachedImage = src;
+        function updateAttachmentUi() {
+            targetAttachmentChip.classList.toggle("is-visible", Boolean(targetAttachment));
+            referenceAttachmentChip.classList.toggle("is-visible", Boolean(referenceAttachment));
+            if (targetAttachment) targetAttachmentThumb.src = targetAttachment;
+            else targetAttachmentThumb.removeAttribute("src");
+            if (referenceAttachment) referenceAttachmentThumb.src = referenceAttachment;
+            else referenceAttachmentThumb.removeAttribute("src");
+            const hasAttachment = Boolean(targetAttachment || referenceAttachment);
+            inputShell.classList.toggle("has-attachment", hasAttachment);
+            chatPanel.classList.toggle("has-attachment", hasAttachment);
+            if (!hasAttachment) {
+                promptInput.placeholder = "Type something fun (e.g.,Dopamine brights)...";
+            } else if (targetAttachment && referenceAttachment) {
+                promptInput.placeholder = "Describe how the target should borrow the reference colors...";
+            } else if (targetAttachment) {
+                promptInput.placeholder = "Describe the color change for the target artwork...";
+            } else {
+                promptInput.placeholder = "Click AI on the canvas to add the target artwork...";
+            }
+        }
+
+        function attachTargetToInput(src) {
+            targetAttachment = src;
             referenceImage = src;
-            attachmentThumb.src = src;
+            inputShell.classList.remove("needs-attachment");
+            chatPanel.classList.remove("has-result");
+            updateAttachmentUi();
+            promptInput.focus();
+        }
+
+        function attachReferenceToInput(src) {
+            referenceAttachment = src;
             inputShell.classList.add("has-attachment");
             inputShell.classList.remove("needs-attachment");
             chatPanel.classList.add("has-attachment");
             chatPanel.classList.remove("has-result");
-            promptInput.placeholder = "Describe the color change for the attached artwork...";
+            updateAttachmentUi();
             promptInput.focus();
         }
 
-        function clearAttachment() {
-            attachedImage = null;
-            attachmentThumb.removeAttribute("src");
-            inputShell.classList.remove("has-attachment");
-            chatPanel.classList.remove("has-attachment");
-            promptInput.placeholder = "Type something fun (e.g.,Dopamine brights)...";
+        function clearTargetAttachment() {
+            targetAttachment = null;
+            updateAttachmentUi();
+        }
+
+        function clearReferenceAttachment() {
+            referenceAttachment = null;
+            updateAttachmentUi();
+        }
+
+        function clearAttachments() {
+            targetAttachment = null;
+            referenceAttachment = null;
+            updateAttachmentUi();
         }
 
         async function generateArtwork() {
             const prompt = promptInput.value.trim() || DEFAULT_PROMPT;
-            if (!attachedImage) {
+            if (!targetAttachment) {
                 inputShell.classList.add("needs-attachment");
                 promptInput.placeholder = "Click AI on the canvas first to attach the artwork...";
                 return;
             }
-            const sourceImage = attachedImage;
+            const sourceImage = await imageToDataUrl(targetAttachment);
+            const referenceSource = referenceAttachment ? await imageToDataUrl(referenceAttachment) : null;
+            const referencePalette = referenceAttachment ? await extractPalette(referenceAttachment).catch(() => []) : [];
             promptInput.value = "";
             chatPanel.classList.add("has-result");
             promptBubble.textContent = prompt;
             resultStatus.textContent = "Generating image...";
             resultNote.textContent = "";
             generatedImage.removeAttribute("src");
+            let explanation = createFallbackExplanation(prompt, referencePalette);
 
             try {
-                const generation = await generateArtworkViaProxy(prompt, sourceImage);
+                const generation = await generateArtworkViaProxy(prompt, sourceImage, referenceSource, referencePalette);
                 latestGenerated = generation.imageUrl;
+                explanation = generation.explanation || explanation;
                 if (generation.demo) {
                     resultStatus.textContent = generation.message || "Local demo fallback.";
                 } else {
@@ -1446,20 +1729,43 @@
             } catch (error) {
                 console.warn("Generation proxy failed; using local demo image:", error);
                 latestGenerated = FALLBACK_GENERATED;
-                resultStatus.textContent = "API failed, showing local demo.";
+                resultStatus.textContent = `API failed, showing local demo: ${error.message || "Generation failed."}`;
             }
             generatedImage.src = latestGenerated;
             generatedImage.dataset.src = latestGenerated;
+            const record = createRecord(latestGenerated, prompt, explanation, referenceAttachment);
+            generatedImage.dataset.recordIndex = "latest";
             resultNote.textContent = latestGenerated === FALLBACK_GENERATED
                 ? "This is the local demo fallback, not a confirmed Wanx result. Check the API status message above, then try another prompt or function mode."
-                : "This image was returned by Wanx. Drag it to the main canvas to continue editing, or drag it back here for another generation pass.";
-            addHistory(latestGenerated);
-            clearAttachment();
+                : explanation;
+            addHistory(record);
+            clearAttachments();
+        }
+
+        function openDetail(recordOrSrc) {
+            const record = typeof recordOrSrc === "string" ? createRecord(recordOrSrc) : recordOrSrc;
+            activeDetailRecord = record;
+            detailImage.src = record.imageUrl;
+            detailExplanation.textContent = record.explanation || createFallbackExplanation(record.prompt || "Color transformation");
+            detailModal.classList.add("is-open");
+            detailModal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeDetail() {
+            detailModal.classList.remove("is-open");
+            detailModal.setAttribute("aria-hidden", "true");
+            activeDetailRecord = null;
         }
 
         function makeDraggable(element) {
             element.addEventListener("dragstart", (event) => {
                 const src = element.dataset.src || element.querySelector("img")?.src || currentCanvasSource;
+                const payload = {
+                    src,
+                    kind: element.dataset.kind || "artwork",
+                    recordIndex: element.dataset.recordIndex || ""
+                };
+                event.dataTransfer.setData("application/json", JSON.stringify(payload));
                 event.dataTransfer.setData("text/plain", src);
                 event.dataTransfer.effectAllowed = "copy";
             });
@@ -1467,15 +1773,27 @@
 
         function handleDropImage(event, callback) {
             event.preventDefault();
+            const json = event.dataTransfer.getData("application/json");
+            if (json) {
+                try {
+                    const payload = JSON.parse(json);
+                    if (payload.src) {
+                        callback(payload.src, payload.kind || "artwork", payload);
+                        return;
+                    }
+                } catch {
+                    // Fall through to the plain URL or file branch.
+                }
+            }
             const src = event.dataTransfer.getData("text/plain");
             if (src) {
-                callback(src);
+                callback(src, "artwork", {});
                 return;
             }
             const file = event.dataTransfer.files?.[0];
             if (!file || !file.type.startsWith("image/")) return;
             const reader = new FileReader();
-            reader.onload = () => callback(reader.result);
+            reader.onload = () => callback(reader.result, "uploaded", {});
             reader.readAsDataURL(file);
         }
 
@@ -1488,14 +1806,25 @@
         chatPanel.addEventListener("dragleave", () => chatPanel.classList.remove("dragover"));
         chatPanel.addEventListener("drop", (event) => {
             chatPanel.classList.remove("dragover");
-            handleDropImage(event, (src) => {
-                attachImageToInput(src);
+            handleDropImage(event, (src, kind) => {
+                if (kind === "inspiration" || targetAttachment) {
+                    attachReferenceToInput(src);
+                } else {
+                    attachTargetToInput(src);
+                }
             });
         });
 
         generatedImage.addEventListener("dragstart", (event) => {
-            event.dataTransfer.setData("text/plain", generatedImage.dataset.src || latestGenerated);
+            const src = generatedImage.dataset.src || latestGenerated;
+            event.dataTransfer.setData("application/json", JSON.stringify({ src, kind: "generated", recordIndex: "latest" }));
+            event.dataTransfer.setData("text/plain", src);
             event.dataTransfer.effectAllowed = "copy";
+        });
+
+        generatedImage.addEventListener("click", () => {
+            if (!latestGenerated) return;
+            openDetail(generationRecords[0] || createRecord(latestGenerated, promptBubble.textContent, resultNote.textContent));
         });
 
         canvasDropZone.addEventListener("dragover", (event) => {
@@ -1512,6 +1841,10 @@
             event.preventDefault();
             const point = getPoint(event);
             isPointerDown = true;
+            if (!isPointInImage(point)) {
+                isPointerDown = false;
+                return;
+            }
             if (activeTool === "picker") {
                 pickColor(point);
                 isPointerDown = false;
@@ -1566,10 +1899,39 @@
         document.getElementById("sendCanvasToAiBtn").addEventListener("click", () => {
             const src = canvasDataUrl();
             currentCanvasSource = src;
-            attachImageToInput(src);
+            attachTargetToInput(src);
         });
 
-        removeAttachmentBtn.addEventListener("click", clearAttachment);
+        removeTargetAttachmentBtn.addEventListener("click", clearTargetAttachment);
+        removeReferenceAttachmentBtn.addEventListener("click", clearReferenceAttachment);
+
+        historyGrid.addEventListener("click", (event) => {
+            const thumb = event.target.closest(".thumb");
+            if (!thumb) return;
+            const index = Number(thumb.dataset.recordIndex);
+            const record = Number.isFinite(index) ? generationRecords[index] : null;
+            openDetail(record || createRecord(thumb.dataset.src || thumb.querySelector("img")?.src));
+        });
+
+        document.querySelector(".thumb-row.inspiration").addEventListener("click", (event) => {
+            const thumb = event.target.closest(".thumb");
+            if (!thumb) return;
+            openDetail(createRecord(
+                thumb.dataset.src || thumb.querySelector("img")?.src,
+                "Inspiration palette",
+                "This inspiration artwork can be used as a color reference. Drag it into the AI input after attaching the main canvas to ask EarthGlow to borrow its color mood."
+            ));
+        });
+
+        detailCloseBtn.addEventListener("click", closeDetail);
+        detailModal.addEventListener("click", (event) => {
+            if (event.target === detailModal) closeDetail();
+        });
+        detailEditBtn.addEventListener("click", () => {
+            if (!activeDetailRecord) return;
+            loadCanvasSource(activeDetailRecord.imageUrl);
+            closeDetail();
+        });
 
         document.querySelector(".send").addEventListener("click", generateArtwork);
         promptInput.addEventListener("keydown", (event) => {
