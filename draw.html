@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarthGlow - 艺术配色工具</title>
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Marcellus', serif;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding-top: 60px;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .nav {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            color: white;
+        }
+
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ff9a8b;
+            cursor: pointer;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr 400px;
+            gap: 20px;
+            padding: 20px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .middle-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .artwork-preview {
+            width: 100%;
+            height: 200px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .artwork-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .color-dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-canvas-wrapper {
+            position: relative;
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .main-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 120px);
+            height: calc(100% - 40px);
+            border-radius: 0px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .main-canvas img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .canvas-actions-left {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvas-actions-right {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .icon-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .color-picker-area {
+            background: linear-gradient(180deg, #3b4cc8 0%, #1a1d4a 100%);
+            height: 250px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .color-picker-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .color-slider {
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(90deg, red, yellow, green, cyan, blue, magenta, red);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .color-slider::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 5px;
+            left: 50%;
+            border: 2px solid #333;
+            cursor: pointer;
+        }
+
+        .opacity-slider {
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(90deg, transparent, #3b4cc8);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .opacity-slider::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            right: 30%;
+            border: 2px solid #333;
+            cursor: pointer;
+        }
+
+        .color-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .color-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .assets-container {
+            width: 100%;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .assets-container img {
+            width: 100%;
+            height: auto;
+            max-height: 120px;
+            object-fit: contain;
+            object-position: bottom;
+        }
+
+        .chat-greeting {
+            color: #032497;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .chat-message {
+            color: #032497;
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+            align-items: flex-start;
+            margin-top: 420px;
+        }
+
+        .preset-btn {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #032497;
+            border-radius: 20px;
+            color: #032497;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(3, 36, 151, 0.3);
+            width: 180px;
+            font-family: 'Marcellus', serif;
+        }
+
+        .preset-btn:hover {
+            background: #032497;
+            color: white;
+            box-shadow: 0 6px 20px rgba(3, 36, 151, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .input-section {
+            margin-top: auto;
+        }
+
+        .custom-input-wrapper {
+            position: relative;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: 'Marcellus', serif;
+        }
+
+        .send-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            background: #032497;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .send-btn img {
+            width: 18px;
+            height: 18px;
+            filter: brightness(0) invert(1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .expand-btn {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .expand-btn img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ai-tools {
+            display: flex;
+            gap: 280px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .ai-tool-btn {
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+        }
+
+        .ai-tool-btn img {
+            width: 80%;
+            height: 80%;
+        }
+
+        .right-panel-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 12px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(3, 36, 151, 0.2);
+            border-top-color: #032497;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #032497;
+            font-weight: 600;
+        }
+
+        .progress-text {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 40px;
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            border-left: 4px solid #4CAF50;
+            color: #2E7D32;
+        }
+
+        .toast-error {
+            border-left: 4px solid #F44336;
+            color: #C62828;
+        }
+
+        .toast-info {
+            border-left: 4px solid #2196F3;
+            color: #1565C0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">EarthGlow</div>
+        <div class="nav">
+            <img src="search.png" alt="搜索" class="search-icon">
+            <span>Home</span>
+            <div class="user-avatar"></div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <h1>Weave Your Story</h1>
+        <p>Play with tradition: Collage your scene, sketch your vibes, and watch AI level it up.</p>
+    </div>
+
+    <div class="container">
+        <!-- 左侧面板 -->
+        <div class="left-column">
+            <div class="panel">
+                <div class="panel-title">Original artwork</div>
+                <div class="artwork-preview">
+                    <img src="original_work.jpg" alt="原始艺术作品">
+                </div>
+                <div class="color-dots">
+                    <div class="color-dot" id="color-dot-1" style="background: #032497;"></div>
+                    <div class="color-dot" id="color-dot-2" style="background: #AB010A;"></div>
+                    <div class="color-dot" id="color-dot-3" style="background: #FFEF48;"></div>
+                    <div class="color-dot" id="color-dot-4" style="background: #3B5241;"></div>
+                    <div class="color-dot" id="color-dot-5" style="background: #D23785;"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-title">Color Palette</div>
+                <div class="color-picker-area">
+                    <img src="color.jpg" alt="调色板">
+                </div>
+                <div class="color-slider"></div>
+                <div class="opacity-slider"></div>
+                <div class="color-input">
+                    <span>Hex</span>
+                    <input type="text" value="032497">
+                    <input type="text" value="100" style="max-width: 60px;">
+                    <span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间画布 -->
+        <div class="middle-column">
+            <div class="panel">
+                <div class="panel-title">Main Canvas</div>
+                <div class="main-canvas-wrapper">
+                    <div class="main-canvas">
+                        <img id="mainCanvas" src="main_canvas.jpg" alt="主画布">
+                    </div>
+                    
+                    <!-- 左侧工具栏 -->
+                    <div class="canvas-actions-left">
+                        <div class="icon-btn" title="保存">
+                            <img src="save_icon.png" alt="保存">
+                        </div>
+                        <div class="icon-btn" title="调整">
+                            <img src="adjust_icon.png" alt="调整">
+                        </div>
+                        <div class="icon-btn" title="设置">
+                            <img src="settings_icon.png" alt="设置">
+                        </div>
+                        <div class="icon-btn" title="画笔">
+                            <img src="brush_icon.png" alt="画笔">
+                        </div>
+                        <div class="icon-btn" title="橡皮擦">
+                            <img src="eraser_icon.png" alt="橡皮擦">
+                        </div>
+                        <div class="icon-btn" title="形状">
+                            <img src="shape_icon.png" alt="形状">
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧图标 -->
+                    <div class="canvas-actions-right">
+                        <div class="icon-btn" title="复制">
+                            <img src="copy_icon.png" alt="复制">
+                        </div>
+                        <div class="icon-btn" title="收藏">
+                            <img src="star.png" alt="收藏">
+                        </div>
+                        <div class="icon-btn" title="下载">
+                            <img src="download.png" alt="下载">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assets面板 -->
+            <div class="panel" style="margin-top: 20px;">
+                <div class="section-header">
+                    <div class="panel-title" style="flex: 1;">Assests</div>
+                    <div class="expand-btn">
+                        <img src="arrow_right.png" alt="展开">
+                    </div>
+                </div>
+                <div class="assets-container">
+                    <img src="assets_all.png" alt="所有素材">
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧聊天面板 -->
+        <div class="right-column">
+            <div class="panel" style="height: 100%;">
+                <div class="right-panel-content">
+                    <div class="chat-content">
+                        <div class="ai-tools">
+                            <div class="ai-tool-btn">
+                                <img src="inspiration_icon.png" alt="灵感">
+                            </div>
+                            <div class="ai-tool-btn">
+                                <img src="history_icon.png" alt="历史">
+                            </div>
+                        </div>
+
+                        <div class="chat-greeting">Hi!</div>
+                        <div class="chat-message">Ready to give this artwork a new mood?</div>
+
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="fillInput('Golden Hours')">Golden Hours</button>
+                            <button class="preset-btn" onclick="fillInput('80s Retro Disco')">80s Retro Disco</button>
+                            <button class="preset-btn" onclick="fillInput('Morandi\'s Afternoon')">Morandi's Afternoon</button>
+                        </div>
+                    </div>
+
+                    <div class="input-section">
+                        <div class="custom-input-wrapper">
+                            <input type="text" class="custom-input" id="promptInput" placeholder="Type something fun (e.g., Dopamine brights)...">
+                            <div class="send-btn" id="sendButton" onclick="sendPrompt()">
+                                <img src="send.png" alt="发送">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/color-extractor.js"></script>
+    <script src="js/storage-manager.js"></script>
+    <script src="js/ui-controller.js"></script>
+    <script>
+        // Initialize EarthGlow App
+        window.app = new UIController();
+    </script>
+</body>
+</html>

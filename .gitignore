@@ -1,0 +1,8 @@
+.env
+node_modules/
+.DS_Store
+Thumbs.db
+color1_*check*.png
+color1_scroll_*.png
+color2_source.jpg
+npm-debug.log*

@@ -1,0 +1,284 @@
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = __dirname;
+const PORT = Number(process.env.PORT || 8000);
+const MAX_BODY_BYTES = 25 * 1024 * 1024;
+
+loadEnvFile(path.join(ROOT, ".env"));
+
+const MIME_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".md": "text/markdown; charset=utf-8"
+};
+
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const separator = trimmed.indexOf("=");
+    if (separator < 1) continue;
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, "");
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
+function sendJson(res, statusCode, payload) {
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  res.end(JSON.stringify(payload));
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        reject(new Error("Request body is too large."));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"));
+      } catch {
+        reject(new Error("Invalid JSON body."));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+async function handleGenerate(req, res) {
+  try {
+    const body = await readJsonBody(req);
+    const prompt = String(body.prompt || "").trim();
+    const image = String(body.image || "").trim();
+    if (!prompt) return sendJson(res, 400, { error: "Prompt is required." });
+    if (!image) return sendJson(res, 400, { error: "Attached image is required." });
+
+    const provider = (process.env.IMAGE_API_PROVIDER || "").toLowerCase()
+      || (process.env.GRSAI_API_KEY ? "grsai" : "")
+      || (process.env.WANX_API_KEY ? "wanx" : "");
+
+    if (provider === "grsai") {
+      const imageUrl = await generateWithGrsai(prompt, image, body.options || {});
+      return sendJson(res, 200, { imageUrl, provider });
+    }
+    if (provider === "wanx") {
+      const result = await generateWithWanx(prompt, image, body.options || {});
+      return sendJson(res, 200, { imageUrl: result.imageUrl, provider, demo: false, message: result.message });
+    }
+
+    return sendJson(res, 200, {
+      imageUrl: "generated_green_blue.jpg",
+      demo: true,
+      message: "Local demo fallback: no image generation provider is configured."
+    });
+  } catch (error) {
+    console.error(error);
+    return sendJson(res, 200, {
+      imageUrl: "generated_green_blue.jpg",
+      demo: true,
+      message: `API failed, showing local demo: ${error.message || "Generation failed."}`
+    });
+  }
+}
+
+async function generateWithGrsai(prompt, image, options) {
+  const apiKey = process.env.GRSAI_API_KEY;
+  if (!apiKey) throw new Error("GRSAI_API_KEY is not configured.");
+  const baseURL = process.env.GRSAI_BASE_URL || "https://grsai.dakka.com.cn";
+  const response = await fetch(`${baseURL}/v1/draw/nano-banana`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: process.env.GRSAI_MODEL || "nano-banana-fast",
+      prompt,
+      aspectRatio: options.aspectRatio || "4:3",
+      imageSize: options.imageSize || "1K",
+      urls: [image],
+      webHook: "-1",
+      shutProgress: false
+    })
+  });
+  const data = await parseApiResponse(response);
+  const taskId = data?.data?.id || data?.id;
+  if (!taskId) return extractImageUrl(data);
+  return pollGrsaiResult(baseURL, apiKey, taskId);
+}
+
+async function pollGrsaiResult(baseURL, apiKey, taskId) {
+  const attempts = Number(process.env.MAX_POLL_ATTEMPTS || 60);
+  const interval = Number(process.env.POLL_INTERVAL_MS || 3000);
+  for (let i = 0; i < attempts; i += 1) {
+    await sleep(interval);
+    const response = await fetch(`${baseURL}/v1/draw/result`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ id: taskId })
+    });
+    const data = await parseApiResponse(response);
+    const status = data?.data?.status || data?.status;
+    if (status === "failed") {
+      throw new Error(data?.data?.failure_reason || data?.failure_reason || "Generation failed.");
+    }
+    if (status === "succeeded" || status === "success") {
+      return extractImageUrl(data);
+    }
+  }
+  throw new Error("Generation timed out.");
+}
+
+async function generateWithWanx(prompt, image, options) {
+  const apiKey = process.env.WANX_API_KEY;
+  if (!apiKey) throw new Error("WANX_API_KEY is not configured.");
+  const baseURL = process.env.WANX_BASE_URL || "https://dashscope.aliyuncs.com/api/v1";
+  const editFunction = options.function || process.env.WANX_FUNCTION || "colorization";
+  const enhancedPrompt = buildWanxColorPrompt(prompt, editFunction);
+  const response = await fetch(`${baseURL}/services/aigc/image2image/image-synthesis`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "X-DashScope-Async": "enable"
+    },
+    body: JSON.stringify({
+      model: process.env.WANX_MODEL || "wanx2.1-imageedit",
+      input: {
+        function: editFunction,
+        prompt: enhancedPrompt,
+        base_image_url: image
+      },
+      parameters: {
+        size: options.size || "1024*1024",
+        n: 1
+      }
+    })
+  });
+  const data = await parseApiResponse(response);
+  const taskId = data?.output?.task_id;
+  const imageUrl = taskId ? await pollWanxResult(baseURL, apiKey, taskId) : extractImageUrl(data);
+  return {
+    imageUrl,
+    message: `Wanx API result (${editFunction})`
+  };
+}
+
+function buildWanxColorPrompt(userPrompt, editFunction) {
+  const request = String(userPrompt || "").trim();
+  const styleGuard = "Keep the original composition, figures, objects, outlines, folk-art flat illustration style, and two-dimensional painting texture. Do not crop, rotate, add new subjects, remove subjects, or change the story.";
+  const colorInstruction = "Make the requested color changes obvious and saturated. Prioritize recoloring the named regions and preserve all other details as much as possible.";
+  if (editFunction === "colorization") {
+    return `${styleGuard} ${colorInstruction} Colorize or recolor this image according to this user request: ${request}`;
+  }
+  return `${styleGuard} ${colorInstruction} Edit the image according to this user request: ${request}`;
+}
+
+async function pollWanxResult(baseURL, apiKey, taskId) {
+  const attempts = Number(process.env.MAX_POLL_ATTEMPTS || 60);
+  const interval = Number(process.env.POLL_INTERVAL_MS || 3000);
+  for (let i = 0; i < attempts; i += 1) {
+    await sleep(interval);
+    const response = await fetch(`${baseURL}/tasks/${taskId}`, {
+      headers: { "Authorization": `Bearer ${apiKey}` }
+    });
+    const data = await parseApiResponse(response);
+    const status = data?.output?.task_status || data?.output?.status || data?.status;
+    if (status === "FAILED" || status === "failed") {
+      throw new Error(data?.output?.message || "Generation failed.");
+    }
+    if (status === "SUCCEEDED" || status === "succeeded") {
+      return extractImageUrl(data);
+    }
+  }
+  throw new Error("Generation timed out.");
+}
+
+async function parseApiResponse(response) {
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    throw new Error(data?.message || data?.error || text || `API request failed: ${response.status}`);
+  }
+  return data;
+}
+
+function extractImageUrl(data) {
+  const candidates = [
+    data?.imageUrl,
+    data?.url,
+    data?.data?.results?.[0]?.url,
+    data?.results?.[0]?.url,
+    data?.output?.results?.[0]?.url,
+    data?.output?.results?.[0]?.image_url,
+    data?.output?.result_url
+  ];
+  const url = candidates.find(Boolean);
+  if (!url) throw new Error("The generation response did not include an image URL.");
+  return url;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function serveStatic(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const requested = url.pathname === "/" ? "/color1.html" : decodeURIComponent(url.pathname);
+  const filePath = path.normalize(path.join(ROOT, requested));
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
+  fs.readFile(filePath, (error, data) => {
+    if (error) {
+      res.writeHead(404);
+      res.end("Not found");
+      return;
+    }
+    const type = MIME_TYPES[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+    res.writeHead(200, { "Content-Type": type });
+    res.end(data);
+  });
+}
+
+const server = http.createServer((req, res) => {
+  if (req.method === "POST" && req.url === "/api/generate") return handleGenerate(req, res);
+  if (req.method === "POST" && req.url === "/api/segment") {
+    return sendJson(res, 501, { error: "SAM segmentation is reserved for the next integration phase." });
+  }
+  if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
+  res.writeHead(405);
+  res.end("Method not allowed");
+});
+
+server.listen(PORT, () => {
+  console.log(`EarthGlow running at http://localhost:${PORT}/color1.html`);
+});
