@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: earthglow-color-workshop
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: IMAGE_API_PROVIDER
+        value: wanx
+      - key: WANX_BASE_URL
+        value: https://dashscope.aliyuncs.com/api/v1
+      - key: WANX_MODEL
+        value: wanx2.1-imageedit
+      - key: WANX_FUNCTION
+        value: colorization
+      - key: WANX_API_KEY
+        sync: false
